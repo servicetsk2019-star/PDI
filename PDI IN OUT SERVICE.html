@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#C8102E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Form PDI">
+<title>Form PDI - Service Center</title>
+<style>
+:root{--red:#C8102E;--ink:#1a1a1a;--bg:#f4f4f2;--card:#fff;--line:#d9d9d4;--mute:#666}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+header{background:var(--ink);color:#fff;padding:14px 16px;border-bottom:4px solid var(--red)}
+header b{font-size:20px;letter-spacing:.5px;color:#fff}header b span{color:var(--red)}
+header small{display:block;color:#bbb;margin-top:2px}
+.tabs{display:flex;position:sticky;top:0;z-index:5;background:var(--ink)}
+.tabs button{flex:1;padding:13px;border:0;background:#333;color:#ddd;font-size:15px;font-weight:600;cursor:pointer}
+.tabs button.on{background:var(--red);color:#fff}
+main{max-width:860px;margin:0 auto;padding:12px}
+fieldset{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--red);margin:0 0 14px;padding:12px 14px}
+legend{font-weight:700;padding:0 6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+label.f{display:block;font-size:13px;color:var(--mute)}
+input[type=text],input[type=tel],input[type=date],input[type=number],select,textarea{width:100%;padding:9px;border:1px solid #bbb;border-radius:4px;font:inherit;margin-top:3px;background:#fff;color:var(--ink)}
+textarea{min-height:70px}
+.item{padding:9px 0;border-top:1px solid #eee}
+.item:first-of-type{border-top:0}
+.nm{margin-bottom:6px}
+.opts{display:flex;gap:6px;flex-wrap:wrap}
+.opts label{flex:0 0 auto;border:1px solid #bbb;border-radius:4px;padding:6px 12px;cursor:pointer;font-size:14px;user-select:none}
+.opts input{position:absolute;opacity:0}
+.opts label:has(input:checked){background:var(--ink);color:#fff;border-color:var(--ink)}
+.opts label.bad:has(input:checked){background:var(--red);border-color:var(--red)}
+.opts label:has(input:focus-visible){outline:3px solid #0a6cff}
+.note{margin-top:6px;padding:6px 8px;font-size:13px}
+.item.miss{background:#fff1f1;outline:2px solid var(--red)}
+button.send{width:100%;padding:15px;background:var(--red);color:#fff;border:0;border-radius:4px;font-size:17px;font-weight:700;cursor:pointer}
+button.send:disabled{opacity:.6}
+#msg{position:fixed;left:12px;right:12px;bottom:12px;padding:14px;border-radius:6px;color:#fff;display:none;z-index:9;text-align:center;font-weight:600}
+.sig{margin-top:12px}
+.sig canvas{display:block;width:100%;height:150px;border:1px dashed #888;border-radius:4px;background:#fff;touch-action:none;cursor:crosshair}
+.sig.miss canvas{border:2px solid var(--red);background:#fff1f1}
+.sig .bar{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--mute);margin-bottom:3px}
+.sig button{border:1px solid #bbb;background:#fff;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:13px}
+.chk{display:flex;gap:8px;align-items:flex-start}
+.chk input{margin-top:4px;width:18px;height:18px}
+.opts label{min-height:44px;display:flex;align-items:center;padding:6px 16px}
+input[type=text],input[type=tel],input[type=date],input[type=number],select,textarea{font-size:16px;min-height:44px}
+body{-webkit-text-size-adjust:100%;padding-bottom:env(safe-area-inset-bottom)}
+header{padding-top:max(14px,env(safe-area-inset-top))}
+.chk input{min-width:22px;height:22px}
+@media(min-width:900px){.grid{grid-template-columns:1fr 1fr 1fr}main{max-width:1000px}}
+</style>
+</head>
+<body>
+<header><b>Form PDI</b><small>Service Center</small></header>
+<div class="tabs"><button id="t-in" class="on" type="button">PDI IN (unit masuk)</button><button id="t-out" type="button">PDI OUT (unit keluar)</button></div>
+<main><div id="app"></div></main>
+<div id="msg" role="status"></div>
+
+<script>
+// ====== ISI SETELAH DEPLOY GOOGLE APPS SCRIPT (lihat panduan) ======
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxrFrAKjTjaGvblJsA4_HBaGOZlzV7DPbzOb-cghSMb3R2oRChr4LFf-aw64iIcVLNW/exec";
+// ===================================================================
+
+const SITES=["ABN", "ACH", "BDG", "BDU", "BGR", "BJN", "BKL", "BKS", "BNJ", "BWI", "CDG", "CGN", "CKR", "CRB", "DPK", "DPS", "GTO", "JBI", "JBR", "JBS", "JKT", "JSL", "JTR", "KDI", "KDR", "KDS", "KLT", "KPG", "LPG", "MAK", "MAN", "MDN", "MDU", "MGL", "MLG", "MTJ", "MTR", "PDG", "PKB", "PKL", "PLB", "PLU", "PNP", "PPS", "PRK", "PTK", "PWT", "RTP", "SBN", "SBU", "SBY", "SKB", "SLO", "SMD", "SMG", "TGR", "TSM", "YOG", "Cileungsi", "Indramayu/jatibarang", "Tegal PKL", "Probolinggo JBR", "Pamekasan SBU", "Cibubur", "Ciledug JSL", "PSR CILACAP PWT", "PSR + BALIKPN SMD", "PSR BUKITTGG PDG", "PSR + BATAM PKB", "PSR + BIMA MTR", "PSR+ LABUAN", "PSR LUBUK PPS", "PSR+ KAYUAGUNG PPS", "PSR MUARA BUNGO JBI", "PSR METRO LPG", "PSR LAHAT PPS", "PSR BATURJ PPS", "PSR FL0RES KPG", "PSR TRNATE MAN", "PSR Bau2 KDI", "PSR Tarakan SMD", "PSR Berau SMD", "PSR Bontang SMD"];
+const LAYANAN = ["Home","Walk-in","Dealer","Out of Town"];
+const S_IN = ["Baik","Rusak","Tdk Ada"];
+const S_OUT = ["OK","Tidak OK","N/A"];
+
+const CATS=["EV 2 Wheels","Home Appliances","Audio/Video"];
+const KG=["Kunci kontak / Smart key","Charger & kabel charger","Buku manual / kartu garansi","Aksesoris standar bawaan (jika ada)"];
+const FORMS = {
+ IN:{ title:"PDI IN", no:"FR-SC-PDI-IN", dateLabel:"Tanggal Masuk", odo:"Odometer Masuk (Km)", bat:"Level Baterai Masuk (%)",
+  tech:"Teknisi Penerima", opts:S_IN, bad:"Rusak",
+  sections:{
+   EV:[
+   ["A. Kelengkapan Unit",["Kunci kontak / Smart key","Charger & kabel charger","Buku manual / kartu garansi","Aksesoris standar bawaan (jika ada)","Spion kiri & kanan","Jok / seat","Box / bagasi (jika ada)"]],
+   ["B. Kondisi Fisik / Bodi",["Body depan (lecet / retak / pecah)","Body belakang (lecet / retak / pecah)","Cat & stiker bodi","Lampu depan","Lampu belakang / rem","Lampu sein kiri & kanan","Spakbor depan & belakang","Standar samping & standar tengah"]]],
+   GEN:[
+   ["A. Kelengkapan Unit",["Unit utama","Kabel power / adaptor","Remote / aksesoris standar (jika ada)","Buku manual / kartu garansi","Dus / packing (jika ada)"]],
+   ["B. Kondisi Fisik",["Casing / bodi depan","Casing / bodi belakang & samping","Layar / panel display (jika ada)","Tombol & kenop kontrol","Label / stiker nomor seri terbaca","Kaki / roda / penyangga (jika ada)"]]]},
+  texts:["Keluhan Konsumen","Catatan Tambahan Teknisi"],
+  agree:"Konsumen menyetujui kondisi awal unit sesuai checklist ini" },
+ OUT:{ title:"PDI OUT", no:"FR-SC-PDI-OUT (draft, menyesuaikan PDI IN)", dateLabel:"Tanggal Keluar", odo:"Odometer Keluar (Km)", bat:"Level Baterai Keluar (%)",
+  tech:"Teknisi / QC Pemeriksa", opts:S_OUT, bad:"Tidak OK",
+  sections:{
+   EV:[
+   ["A. Verifikasi Pekerjaan",["Keluhan konsumen sudah teratasi","Pekerjaan sesuai Work Order","Part bekas dikembalikan / dicatat (jika diminta)","Tidak ada baut / komponen longgar"]],
+   ["B. Kondisi Fisik, Bodi & Kebersihan",["Tidak ada kerusakan baru dibanding PDI IN","Baut body / cover / fairing kencang, tidak ada yang kendor","Unit bersih (bodi, jok, velg)","Lampu depan, belakang & sein berfungsi","Spion kiri & kanan","Jok / box terpasang & terkunci baik"]],
+   ["C. Sistem Kelistrikan & Baterai",["Baterai terpasang & segel utuh","Dashboard menyala normal, tanpa kode error","Klakson","Port / konektor charging","Level baterai cukup untuk serah terima"]],
+   ["D. Sistem Pengereman",["Rem depan","Rem belakang","Lampu rem menyala","Baut kaliper, bracket & handle rem kencang, tidak ada yang kendor","Kabel / hose rem tidak kendor & tidak bocor"]],
+   ["E. Ban, Velg & Suspensi",["Kondisi & tekanan ban depan","Kondisi & tekanan ban belakang","Baut roda kencang","Suspensi depan & belakang"]],
+   ["F. Test Ride",["Suara motor normal","Respon throttle halus","Tidak ada getaran / bunyi abnormal","Pengereman saat test ride normal"]],
+   ["G. Kelengkapan Dikembalikan",KG]],
+   GEN:[
+   ["A. Verifikasi Pekerjaan",["Keluhan konsumen sudah teratasi","Pekerjaan sesuai Work Order","Part bekas dikembalikan / dicatat (jika diminta)","Tidak ada baut / komponen longgar pada casing"]],
+   ["B. Kondisi Fisik & Kebersihan",["Tidak ada kerusakan baru dibanding PDI IN","Unit bersih","Layar / panel display (jika ada)","Tombol & kenop kontrol berfungsi"]],
+   ["C. Fungsi Unit",["Menyala / standby normal","Fungsi utama normal","Tidak ada suara / bau / panas abnormal"]],
+   ["D. Kelengkapan Dikembalikan",["Kabel power / adaptor","Remote / aksesoris standar","Buku manual / kartu garansi"]]]},
+  texts:["Ringkasan Pekerjaan","Catatan Tambahan Teknisi"],
+  agree:"Konsumen menerima unit dan menyetujui hasil pekerjaan" }
+};
+
+const $=s=>document.querySelector(s);
+const esc=s=>s.replace(/"/g,"&quot;");
+let cur="IN",cat=CATS[0];
+
+function render(){
+ const F=FORMS[cur], ev=cat===CATS[0];
+ const secs=F.sections[ev?"EV":"GEN"];
+ const today=new Date().toISOString().slice(0,10);
+ let h=`<fieldset><legend>Kategori Produk</legend><label class="f">Pilih kategori produk<select id="cat">${CATS.map(c=>`<option${c===cat?" selected":""}>${c}</option>`).join("")}</select></label></fieldset>
+ <form id="f" novalidate><fieldset><legend>${F.title} - ${F.no}</legend><div class="grid">
+ <label class="f">${F.dateLabel}<input type="date" name="Tanggal" value="${today}" required></label>
+ <label class="f">Site / Service Center<select name="Site Service Center" id="site" required><option value="">Pilih site...</option>${SITES.map(x=>`<option>${x}</option>`).join("")}</select></label>
+ ${cur==="OUT"?`<label class="f">No. Work Order (WO) - dari PDI IN<select name="No WO" id="wo" required disabled><option value="">Pilih site dulu...</option></select></label>`:`<label class="f">No. Work Order (WO)<input type="text" name="No WO" required></label>`}
+ <label class="f">Jenis Layanan<select name="Jenis Layanan" required><option value="">Pilih...</option>${LAYANAN.map(x=>`<option>${x}</option>`).join("")}</select></label>
+ <label class="f">Model / Tipe Unit<input type="text" name="Model Unit" required></label>
+ ${ev?"":`<label class="f">No. Seri (Serial Number)<input type="text" name="VIN" required></label>`}
+
+ <label class="f">${F.tech}<input type="text" name="Teknisi" required></label>
+ </div></fieldset>`;
+ secs.forEach((s,si)=>{
+  h+=`<fieldset><legend>${s[0]}</legend>`;
+  s[1].forEach((it,ii)=>{
+   const id=`${si}_${ii}`;
+   h+=`<div class="item" data-k="${esc(s[0].slice(0,1)+'. '+it)}"><div class="nm">${ii+1}. ${it}</div><div class="opts">`+
+   F.opts.map(o=>`<label class="${o===F.bad?'bad':''}"><input type="radio" name="r${id}" value="${o}">${o}</label>`).join("")+
+   `</div><input type="text" class="note" name="n${id}" placeholder="Catatan (opsional)"></div>`;
+  });
+  h+=`</fieldset>`;
+ });
+ F.texts.forEach((t,i)=>{h+=`<fieldset><legend>${String.fromCharCode(65+secs.length+i)}. ${t}</legend><textarea name="T${i}"></textarea></fieldset>`});
+ h+=`<fieldset><label class="chk"><input type="checkbox" name="agree" required><span>${F.agree}</span></label>
+ <div class="sig" data-p="k"><div class="bar"><span>Tanda tangan Konsumen</span><button type="button">Hapus</button></div><canvas width="600" height="225"></canvas></div>
+ <div class="sig" data-p="t"><div class="bar"><span>Tanda tangan ${F.tech}</span><button type="button">Hapus</button></div><canvas width="600" height="225"></canvas></div></fieldset>
+ <button class="send" type="submit">Kirim ${F.title}</button></form>`;
+ $("#app").innerHTML=h;
+ $("#cat").onchange=e=>{cat=e.target.value;render()};
+ if(cur==="OUT"){$("#site").onchange=loadWO;$("#wo").onchange=fillFromWO}
+ $("#f").addEventListener("submit",submit);
+ initPads();
+}
+let woItems=[];
+function jsonp(url,ms){return new Promise((res,rej)=>{
+ const cb="cb"+Date.now()+Math.floor(Math.random()*1e4),sc=document.createElement("script");
+ const done=()=>{clearTimeout(t);delete window[cb];sc.remove()};
+ const t=setTimeout(()=>{done();rej(new Error("timeout"))},ms||20000);
+ window[cb]=d=>{done();res(d)};
+ sc.onerror=()=>{done();rej(new Error("network"))};
+ sc.src=url+(url.includes("?")?"&":"?")+"callback="+cb;document.head.appendChild(sc)})}
+function setOpts(sel,first,list){sel.innerHTML="";const o0=document.createElement("option");o0.value="";o0.textContent=first;sel.appendChild(o0);
+ list.forEach(w=>{const o=document.createElement("option");o.value=w.wo;o.textContent=w.wo+(w.model?" - "+w.model:"");sel.appendChild(o)})}
+async function loadWO(){
+ const site=$("#site").value,sel=$("#wo");woItems=[];sel.disabled=true;
+ if(!site){setOpts(sel,"Pilih site dulu...",[]);return}
+ setOpts(sel,"Memuat daftar WO...",[]);
+ try{
+  const r=await jsonp(SCRIPT_URL+"?action=wo&site="+encodeURIComponent(site)+"&kategori="+encodeURIComponent(cat));
+  if(!r.ok)throw new Error(r.error||"error");
+  woItems=r.items;
+  setOpts(sel,woItems.length?"Pilih No. WO...":"Tidak ada WO PDI IN yang menunggu PDI OUT di site ini",woItems);
+  sel.disabled=!woItems.length;
+ }catch(e){setOpts(sel,"Gagal memuat WO - pilih site lagi",[]);toast("Gagal memuat daftar WO. Cek koneksi dan deployment Apps Script.","#C8102E")}
+}
+function fillFromWO(){
+ const w=woItems.find(x=>x.wo===$("#wo").value);if(!w)return;
+ const m={"Model Unit":w.model,"VIN":w.vin};
+ Object.keys(m).forEach(k=>{const el=document.querySelector('#f [name="'+k+'"]');if(el&&m[k])el.value=m[k]});
+}
+const pads={};
+function initPads(){
+ document.querySelectorAll(".sig").forEach(box=>{
+  const c=box.querySelector("canvas"),x=c.getContext("2d"),key=box.dataset.p;
+  x.lineWidth=3;x.lineCap="round";x.lineJoin="round";x.strokeStyle="#111";
+  const st=pads[key]={c,dirty:false,box};
+  let on=false;
+  const pt=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]};
+  c.addEventListener("pointerdown",e=>{on=true;c.setPointerCapture(e.pointerId);const[a,b]=pt(e);x.beginPath();x.moveTo(a,b);x.lineTo(a+.1,b+.1);x.stroke();st.dirty=true;box.classList.remove("miss");e.preventDefault()});
+  c.addEventListener("pointermove",e=>{if(!on)return;const[a,b]=pt(e);x.lineTo(a,b);x.stroke();e.preventDefault()});
+  ["pointerup","pointercancel"].forEach(t=>c.addEventListener(t,()=>on=false));
+  box.querySelector("button").onclick=()=>{x.clearRect(0,0,c.width,c.height);st.dirty=false};
+ });
+}
+
+function toast(t,c){const m=$("#msg");m.textContent=t;m.style.background=c;m.style.display="block";clearTimeout(m._t);m._t=setTimeout(()=>m.style.display="none",5000)}
+
+async function submit(ev){
+ ev.preventDefault();
+ const f=ev.target,F=FORMS[cur];
+ let bad=null;
+ f.querySelectorAll("[required]").forEach(el=>{if(!bad&&(el.type==="checkbox"?!el.checked:!el.value.trim()))bad=el});
+ const items=[...f.querySelectorAll(".item")];
+ items.forEach(it=>{const ok=it.querySelector("input[type=radio]:checked");it.classList.toggle("miss",!ok);if(!ok&&!bad)bad=it});
+ ["k","t"].forEach(k=>{const p=pads[k];p.box.classList.toggle("miss",!p.dirty);if(!p.dirty&&!bad)bad=p.box});
+ if(bad){bad.scrollIntoView({block:"center",behavior:"smooth"});toast("Lengkapi kolom wajib dan semua item pemeriksaan","#C8102E");return}
+ if(SCRIPT_URL.startsWith("PASTE")){toast("SCRIPT_URL belum diisi. Ikuti panduan deploy Apps Script.","#C8102E");return}
+
+ const d=new FormData(f), fields={"Kategori Produk":cat};
+ ["Tanggal","No WO","Jenis Layanan","Model Unit","VIN","Site Service Center","Teknisi"]
+  .forEach(k=>fields[k]=d.get(k)||"");
+ const notes=[];
+ items.forEach((it,i)=>{
+  const k=it.dataset.k, v=it.querySelector("input[type=radio]:checked").value, n=it.querySelector(".note").value.trim();
+  fields[k]=v; if(n)notes.push(k+": "+n);
+ });
+ fields["Catatan Per Item"]=notes.join(" | ");
+ F.texts.forEach((t,i)=>fields[t]=d.get("T"+i)||"");
+ fields["Konsumen Setuju"]="Ya";
+ const signatures={konsumen:pads.k.c.toDataURL("image/png"),teknisi:pads.t.c.toDataURL("image/png")};
+ const total=items.length, issues=items.filter(it=>it.querySelector("input:checked").value===F.bad).length;
+ fields["Jumlah Item Bermasalah"]=issues;
+
+ const btn=f.querySelector(".send");btn.disabled=true;btn.textContent="Mengirim...";
+ try{
+  const r=await fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({form:"PDI_"+cur,fields,signatures})});
+  if(r&&r.type!=="opaque"&&r.status>=400)throw new Error("HTTP "+r.status);
+  toast("Data "+F.title+" terkirim ke Google Spreadsheet","#1b7f3b");
+  render();window.scrollTo({top:0,behavior:"smooth"});
+ }catch(e){
+  toast("Gagal mengirim. Cek koneksi internet lalu coba lagi.","#C8102E");
+  btn.disabled=false;btn.textContent="Kirim "+F.title;
+ }
+}
+
+function tab(w){cur=w;$("#t-in").classList.toggle("on",w==="IN");$("#t-out").classList.toggle("on",w==="OUT");render();window.scrollTo(0,0)}
+$("#t-in").onclick=()=>tab("IN");$("#t-out").onclick=()=>tab("OUT");
+render();
+</script>
+</body>
+</html>
